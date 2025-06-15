@@ -25,14 +25,14 @@ RUN corepack enable pnpm
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files for runtime dependencies only
 COPY package.json pnpm-lock.yaml ./
 
-# Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod
-
-# Copy built application
+# Copy built application first
 COPY --from=builder /app/dist ./dist
+
+# Install only runtime dependencies, skip scripts to avoid prepare hook
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
 # Set environment
 ENV NODE_ENV=production
