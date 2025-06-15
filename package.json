@@ -1,22 +1,44 @@
 {
   "name": "mcp-cognition-wheel",
   "version": "0.6.2",
-  "description": "MCP server for cognition wheel",
+  "description": "MCP server implementing wisdom of crowds AI reasoning by consulting Claude, Gemini, and GPT-4 in parallel",
   "license": "MIT",
   "author": "Nikita Podelenko",
-  "homepage": "https://mcp.dev",
-  "bugs": "https://github.com/mcp-dev/servers/issues",
+  "homepage": "https://github.com/Hormold/cognition-wheel",
+  "bugs": "https://github.com/Hormold/cognition-wheel/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hormold/cognition-wheel.git"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "claude",
+    "gemini",
+    "gpt-4",
+    "parallel-processing",
+    "wisdom-of-crowds",
+    "cursor",
+    "anthropic",
+    "openai",
+    "google"
+  ],
   "type": "module",
   "bin": {
+    "mcp-cognition-wheel": "dist/app.js",
     "wheel": "dist/app.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "package.json"
   ],
   "scripts": {
     "build": "tsc && shx chmod +x dist/*.js",
     "dev": "tsc --watch",
-    "start": "tsx src/app.ts"
+    "start": "tsx src/app.ts",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "2.0.0-alpha.13",

@@ -2,6 +2,26 @@
 
 A Model Context Protocol (MCP) server that implements a "wisdom of crowds" approach to AI reasoning by consulting multiple state-of-the-art language models in parallel and synthesizing their responses.
 
+## Quick Start
+
+### Option 1: Use with npx (Recommended)
+
+```bash
+# Run directly with npx (no installation needed)
+npx mcp-cognition-wheel
+
+# Or install globally
+npm install -g mcp-cognition-wheel
+mcp-cognition-wheel
+```
+
+### Option 2: Build from source
+
+1. Clone the repository
+2. Install dependencies: `pnpm install`
+3. Copy `.env.example` to `.env` and add your API keys
+4. Build the project: `pnpm run build`
+
 ## How It Works
 
 The Cognition Wheel follows a three-phase process:
@@ -25,6 +45,19 @@ The Cognition Wheel follows a three-phase process:
 
 ## Installation
 
+### Option 1: Use with npx (Recommended)
+
+```bash
+# Run directly with npx (no installation needed)
+npx mcp-cognition-wheel
+
+# Or install globally
+npm install -g mcp-cognition-wheel
+mcp-cognition-wheel
+```
+
+### Option 2: Build from source
+
 1. Clone the repository
 2. Install dependencies: `pnpm install`
 3. Copy `.env.example` to `.env` and add your API keys
@@ -44,16 +77,40 @@ This is an MCP server designed to be used with MCP-compatible clients like Claud
 
 Based on the guide from [this dev.to article](https://dev.to/andyrewlee/use-your-own-mcp-on-cursor-in-5-minutes-1ag4), here's how to integrate with Cursor:
 
+#### Option 1: Using npx (Recommended)
+
+1. **Open Cursor Settings**:
+   - Go to Settings → MCP
+   - Click "Add new MCP server"
+
+2. **Configure the server**:
+   - **Name**: `cognition-wheel`
+   - **Command**: `npx`
+   - **Args**: `["-y", "mcp-cognition-wheel"]`
+   
+   Example configuration:
+   ```json
+   {
+     "cognition-wheel": {
+       "command": "npx",
+       "args": ["-y", "mcp-cognition-wheel"],
+       "env": {
+         "ANTHROPIC_API_KEY": "your_anthropic_key",
+         "GOOGLE_GENERATIVE_AI_API_KEY": "your_google_key", 
+         "OPENAI_API_KEY": "your_openai_key"
+       }
+     }
+   }
+   ```
+
+#### Option 2: Using local build
+
 1. **Build the project** (if not already done):
    ```bash
    pnpm run build
    ```
 
-2. **Open Cursor Settings**:
-   - Go to Settings → MCP
-   - Click "Add new MCP server"
-
-3. **Configure the server**:
+2. **Configure the server**:
    - **Name**: `cognition-wheel`
    - **Command**: `node`
    - **Args**: `["/absolute/path/to/your/cognition-wheel/dist/app.js"]`
@@ -75,7 +132,7 @@ Based on the guide from [this dev.to article](https://dev.to/andyrewlee/use-your
    }
    ```
 
-4. **Test the integration**:
+3. **Test the integration**:
    - Enter Agent mode in Cursor
    - Ask a complex question that would benefit from multiple AI perspectives
    - The `cognition_wheel` tool should be automatically triggered
