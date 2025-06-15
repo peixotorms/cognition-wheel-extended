@@ -40,6 +40,46 @@ This is an MCP server designed to be used with MCP-compatible clients like Claud
 - `GOOGLE_GENERATIVE_AI_API_KEY`: Your Google AI API key  
 - `OPENAI_API_KEY`: Your OpenAI API key
 
+### Using with Cursor
+
+Based on the guide from [this dev.to article](https://dev.to/andyrewlee/use-your-own-mcp-on-cursor-in-5-minutes-1ag4), here's how to integrate with Cursor:
+
+1. **Build the project** (if not already done):
+   ```bash
+   pnpm run build
+   ```
+
+2. **Open Cursor Settings**:
+   - Go to Settings → MCP
+   - Click "Add new MCP server"
+
+3. **Configure the server**:
+   - **Name**: `cognition-wheel`
+   - **Command**: `node`
+   - **Args**: `["/absolute/path/to/your/cognition-wheel/dist/app.js"]`
+   
+   Example configuration:
+   ```json
+   {
+     "cognition-wheel": {
+       "command": "node",
+       "args": [
+         "/Users/yourname/path/to/cognition-wheel/dist/app.js"
+       ],
+       "env": {
+         "ANTHROPIC_API_KEY": "your_anthropic_key",
+         "GOOGLE_GENERATIVE_AI_API_KEY": "your_google_key", 
+         "OPENAI_API_KEY": "your_openai_key"
+       }
+     }
+   }
+   ```
+
+4. **Test the integration**:
+   - Enter Agent mode in Cursor
+   - Ask a complex question that would benefit from multiple AI perspectives
+   - The `cognition_wheel` tool should be automatically triggered
+
 ### Tool Usage
 
 The server provides a single tool called `cognition_wheel` with the following parameters:
@@ -53,6 +93,22 @@ The server provides a single tool called `cognition_wheel` with the following pa
 - `pnpm run dev`: Watch mode for development
 - `pnpm run build`: Build the TypeScript code
 - `pnpm run start`: Run the server directly with tsx
+
+## Docker
+
+Build and run with Docker:
+
+```bash
+# Build the image
+docker build -t cognition-wheel .
+
+# Run with environment variables
+docker run --rm \
+  -e ANTHROPIC_API_KEY=your_key \
+  -e GOOGLE_GENERATIVE_AI_API_KEY=your_key \
+  -e OPENAI_API_KEY=your_key \
+  cognition-wheel
+```
 
 ## License
 
