@@ -109,6 +109,67 @@ This is an MCP server designed to be used with MCP-compatible clients like Claud
   - Default: `https://api.z.ai/api/paas/v4` (common API)
   - Coding Plan: `https://api.z.ai/api/coding/paas/v4`
 
+### Using with Claude Code
+
+**Quick Setup (One Command)**
+
+First, build the project:
+```bash
+cd /path/to/cognition-wheel-extended
+pnpm install
+pnpm run build
+```
+
+Then add the MCP server to Claude Code:
+
+**Full configuration:**
+```bash
+claude mcp add cognition-wheel-extended -s user \
+  -e OPENAI_API_KEY="sk-your-openai-key" \
+  -e DEEPSEEK_API_KEY="sk-your-deepseek-key" \
+  -e OPENROUTER_API_KEY="sk-your-openrouter-key" \
+  -e ZAI_API_KEY="your-zai-key" \
+  -e OPENAI_MODEL="gpt-5" \
+  -e OPENAI_REASONING_EFFORT="high" \
+  -e DEEPSEEK_MODEL="deepseek-chat" \
+  -e OPENROUTER_MODELS="qwen/qwen3-coder,deepseek/deepseek-v3.2-exp,moonshotai/kimi-k2-0905" \
+  -- node /absolute/path/to/cognition-wheel-extended/dist/app.js
+```
+
+**Minimal setup (DeepSeek only):**
+```bash
+claude mcp add cognition-wheel-extended -s user \
+  -e DEEPSEEK_API_KEY="sk-your-deepseek-key" \
+  -- node /absolute/path/to/cognition-wheel-extended/dist/app.js
+```
+
+**OpenAI only:**
+```bash
+claude mcp add cognition-wheel-extended -s user \
+  -e OPENAI_API_KEY="sk-your-openai-key" \
+  -e OPENAI_MODEL="gpt-5" \
+  -e OPENAI_REASONING_EFFORT="high" \
+  -- node /absolute/path/to/cognition-wheel-extended/dist/app.js
+```
+
+**Verify installation:**
+```bash
+# List all MCP servers
+claude mcp list
+
+# Restart the server
+claude mcp restart cognition-wheel-extended
+```
+
+**Using the tool:**
+
+Once connected, Claude Code will automatically use the `cognition_wheel` tool for complex reasoning tasks, or you can explicitly request it:
+
+```
+Use the cognition_wheel tool to analyze the trade-offs between
+microservices and monolithic architectures.
+```
+
 ### Using with Cursor
 
 Based on the guide from [this dev.to article](https://dev.to/andyrewlee/use-your-own-mcp-on-cursor-in-5-minutes-1ag4), here's how to integrate with Cursor:
