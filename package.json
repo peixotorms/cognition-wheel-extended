@@ -1,17 +1,17 @@
 {
   "name": "mcp-cognition-wheel-extended",
-  "version": "0.6.2",
+  "version": "1.0.3",
   "description": "MCP server implementing wisdom of crowds AI reasoning by consulting multiple AI providers (OpenAI GPT-5, DeepSeek, OpenRouter models, z.ai GLM-4.6) in parallel",
   "license": "MIT",
   "author": "Nikita Podelenko",
   "contributors": [
     "Raul P."
   ],
-  "homepage": "https://github.com/peixotorms/cognition-wheel-extended",
-  "bugs": "https://github.com/peixotorms/cognition-wheel-extended/issues",
+  "homepage": "https://github.com/peixotorms/mcp-cognition-wheel-extended",
+  "bugs": "https://github.com/peixotorms/mcp-cognition-wheel-extended/issues",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/peixotorms/cognition-wheel-extended.git"
+    "url": "git+https://github.com/peixotorms/mcp-cognition-wheel-extended.git"
   },
   "keywords": [
     "mcp",
@@ -30,19 +30,18 @@
   ],
   "type": "module",
   "bin": {
-    "mcp-cognition-wheel-extended": "dist/app.js",
-    "wheel-extended": "dist/app.js"
+    "mcp-cognition-wheel-extended": "dist/app.js"
   },
   "files": [
     "dist",
     "README.md",
+    "LICENSE",
     "package.json"
   ],
   "scripts": {
     "build": "tsc && shx chmod +x dist/*.js",
     "dev": "tsc --watch",
     "start": "tsx src/app.ts",
-    "postinstall": "npm run build",
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {

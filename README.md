@@ -60,8 +60,8 @@ npm install mcp-cognition-wheel-extended
 
 ```bash
 # Clone the repository
-git clone https://github.com/peixotorms/cognition-wheel-extended.git
-cd cognition-wheel-extended
+git clone https://github.com/peixotorms/mcp-cognition-wheel-extended.git
+cd mcp-cognition-wheel-extended
 
 # Install dependencies
 pnpm install
@@ -131,7 +131,7 @@ Then add the MCP server to Claude Code with your API keys:
 
 **Example with all providers:**
 ```bash
-claude mcp add cognition-wheel-extended -s user \
+claude mcp add mcp-cognition-wheel-extended -s user \
   -e OPENAI_API_KEY="your-openai-key-here" \
   -e OPENAI_MODEL="gpt-5" \
   -e OPENAI_REASONING_EFFORT="high" \
@@ -147,7 +147,7 @@ claude mcp add cognition-wheel-extended -s user \
 **Minimal setup (use only the providers you have keys for):**
 ```bash
 # Example with just DeepSeek
-claude mcp add cognition-wheel-extended -s user \
+claude mcp add mcp-cognition-wheel-extended -s user \
   -e DEEPSEEK_API_KEY="your-deepseek-key-here" \
   -- mcp-cognition-wheel-extended
 ```
@@ -157,12 +157,12 @@ claude mcp add cognition-wheel-extended -s user \
 If you built from source:
 ```bash
 # Build the project first
-cd /path/to/cognition-wheel-extended
+cd /path/to/mcp-cognition-wheel-extended
 pnpm install
 pnpm run build
 
 # Add to Claude Code with absolute path to dist/app.js
-claude mcp add cognition-wheel-extended -s user \
+claude mcp add mcp-cognition-wheel-extended -s user \
   -e OPENAI_API_KEY="your-openai-key-here" \
   -e OPENAI_MODEL="gpt-5" \
   -e OPENAI_REASONING_EFFORT="high" \
@@ -172,7 +172,7 @@ claude mcp add cognition-wheel-extended -s user \
   -e OPENROUTER_MODELS="qwen/qwen3-coder,deepseek/deepseek-v3.2-exp,moonshotai/kimi-k2-0905" \
   -e ZAI_API_KEY="your-zai-key-here" \
   -e ZAI_MODEL="glm-4.6" \
-  -- node /absolute/path/to/cognition-wheel-extended/dist/app.js
+  -- node /absolute/path/to/mcp-cognition-wheel-extended/dist/app.js
 ```
 
 **Verify installation:**
@@ -181,7 +181,7 @@ claude mcp add cognition-wheel-extended -s user \
 claude mcp list
 
 # Restart the server
-claude mcp restart cognition-wheel-extended
+claude mcp restart mcp-cognition-wheel-extended
 ```
 
 **Using the tool:**
@@ -209,7 +209,7 @@ Based on the guide from [this dev.to article](https://dev.to/andyrewlee/use-your
    Example configuration (add only the API keys you have):
    ```json
    {
-     "cognition-wheel-extended": {
+     "mcp-cognition-wheel-extended": {
        "command": "mcp-cognition-wheel-extended",
        "env": {
          "OPENAI_API_KEY": "your-openai-key-here",
@@ -225,7 +225,7 @@ Based on the guide from [this dev.to article](https://dev.to/andyrewlee/use-your
    **Alternative: Using npx (no global install needed)**:
    ```json
    {
-     "cognition-wheel-extended": {
+     "mcp-cognition-wheel-extended": {
        "command": "npx",
        "args": ["mcp-cognition-wheel-extended"],
        "env": {
@@ -239,8 +239,8 @@ Based on the guide from [this dev.to article](https://dev.to/andyrewlee/use-your
 
 1. **Build the project**:
    ```bash
-   git clone https://github.com/peixotorms/cognition-wheel-extended.git
-   cd cognition-wheel-extended
+   git clone https://github.com/peixotorms/mcp-cognition-wheel-extended.git
+   cd mcp-cognition-wheel-extended
    pnpm install
    pnpm run build
    ```
@@ -248,9 +248,9 @@ Based on the guide from [this dev.to article](https://dev.to/andyrewlee/use-your
 2. **Configure in Cursor** with absolute path:
    ```json
    {
-     "cognition-wheel-extended": {
+     "mcp-cognition-wheel-extended": {
        "command": "node",
-       "args": ["/absolute/path/to/cognition-wheel-extended/dist/app.js"],
+       "args": ["/absolute/path/to/mcp-cognition-wheel-extended/dist/app.js"],
        "env": {
          "DEEPSEEK_API_KEY": "your-deepseek-key-here",
          "OPENROUTER_API_KEY": "your-openrouter-key-here"
@@ -284,7 +284,7 @@ Build and run with Docker:
 
 ```bash
 # Build the image
-docker build -t cognition-wheel-extended .
+docker build -t mcp-cognition-wheel-extended .
 
 # Run with environment variables
 docker run --rm \
@@ -296,7 +296,7 @@ docker run --rm \
   -e CUSTOM_OPENAI_BASE_URL="https://api.novita.ai/openai" \
   -e CUSTOM_OPENAI_MODEL="deepseek/deepseek-v3.2-exp" \
   -e OPENROUTER_MODELS="qwen/qwen3-coder,moonshotai/kimi-k2-0905" \
-  cognition-wheel-extended
+  mcp-cognition-wheel-extended
 ```
 
 ## License
