@@ -10,7 +10,8 @@ import {
 import chalk from 'chalk';
 import { generateText } from 'ai';
 import { deepseek } from '@ai-sdk/deepseek';
-import { openai } from '@ai-sdk/openai';
+import { openai, createOpenAI } from '@ai-sdk/openai';
+import { createAnthropic } from '@ai-sdk/anthropic';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import dotenv from 'dotenv';
 import fs from 'fs';
@@ -85,13 +86,11 @@ async function callRealModel(
 ): Promise<string> {
   try {
     const startTime = Date.now();
-    logger.log(`Calling ${modelConfig.name}...`, { model: modelConfig.name, codeName: modelConfig.codeName });
+    logger.log(`Calling ${modelConfig.name}...`, { model: modelConfig.name });
     
     const prompt = `Context: ${context}
 
-Question: ${question}
-
-Please provide a detailed, well-reasoned answer.`;
+Question: ${question}`;
 
     const { text } = await generateText({
       model: modelConfig.provider(modelConfig.model),
@@ -117,68 +116,39 @@ Please provide a detailed, well-reasoned answer.`;
 }
 
 /**
- * Replaces anonymous code names with real model names in the final synthesis
- */
-function replaceCodeNamesWithRealNames(text: string, models: ModelConfig[]): string {
-  let result = text;
-  models.forEach(model => {
-    const codeNameRegex = new RegExp(model.codeName, 'g');
-    result = result.replace(codeNameRegex, model.name);
-  });
-  return result;
-}
-
-/**
- * Constructs the detailed "rich prompt" for the final synthesis step using anonymous code names.
+ * Constructs the detailed "rich prompt" for the final synthesis step.
+ * Supports any number of models (2+).
  */
 function createSynthesizerPrompt(context: string, question: string, responses: string[], models: ModelConfig[]): string {
-  const [response1, response2, response3] = responses;
+  const numModels = models.length;
+  const modelNames = models.map(m => m.name).join(', ');
+
+  // Build the system responses section dynamically
+  const systemResponsesSection = models.map((model, index) => {
+    return `**${model.name}:**
+${responses[index]}`;
+  }).join('\n\n---\n\n');
 
   // This template is designed to guide the final model to perform a critical analysis.
-  return `This is a high-level reasoning task. Your goal is to act as a critical and objective evaluator of the provided model outputs. Do not simply repeat the information; your value is in the synthesis and analysis.
+  return `You are synthesizing responses from multiple AI models to provide a comprehensive answer.
 
 **Original Context:**
-> ${context}
+${context}
 
 **Original Question:**
-> ${question}
+${question}
 
-**Analysis Task:**
-You have been provided with three distinct responses to the above question from three different AI systems (${models[0].codeName}, ${models[1].codeName}, and ${models[2].codeName}). Your task is to critically evaluate these responses and generate a single, comprehensive, and well-reasoned final answer.
+**Task:**
+Below are ${numModels} responses from different AI models (${modelNames}). Analyze these responses and create a single, comprehensive answer.
 
-IMPORTANT: Use only the provided system code names (${models[0].codeName}, ${models[1].codeName}, ${models[2].codeName}) when referring to the systems. Do not speculate about their actual identities.
-
-Please structure your response by following these steps:
-
-1.  **Identify Areas of Agreement:**
-    * Begin by summarizing the key points, conclusions, or facts where all three systems are in agreement. This will form the foundation of the final answer.
-
-2.  **Identify Areas of Disagreement and Nuance:**
-    * Carefully compare the responses and highlight any contradictions, discrepancies, or subtle differences in their conclusions or the data they provided.
-    * For each point of disagreement, briefly analyze why the systems might have differed.
-    * Evaluate all inputs with equal weight, without bias toward any particular system.
-
-3.  **Synthesize a Final, Verified Answer:**
-    * Based on your analysis of the agreements and disagreements, construct what you believe to be the most accurate and complete answer.
-    * If one system's answer seems more plausible or well-supported, explain why using only the code names.
-    * If the systems missed something important from the original context, please add it.
-    * Present this final answer clearly and concisely.
-
-**System Responses for Analysis:**
----
-**${models[0].codeName} Response:**
-> ${response1}
----
-**${models[1].codeName} Response:**
-> ${response2}
----
-**${models[2].codeName} Response:**
-> ${response3}
+**Model Responses:**
 ---
 
-**Final Synthesized Answer:**
-(Begin your final answer here, following the three steps outlined in the Analysis Task.)
-  `.trim();
+${systemResponsesSection}
+
+---
+
+**Your Synthesis:**`;
 }
 
 // --- Main Tool Logic ---
@@ -192,10 +162,11 @@ class CognitionWheel {
       process.env.OPENAI_API_KEY ||
       process.env.DEEPSEEK_API_KEY ||
       process.env.OPENROUTER_API_KEY ||
-      process.env.ZAI_API_KEY;
+      process.env.ZAI_API_KEY ||
+      process.env.CUSTOM_OPENAI_API_KEY;
 
     if (!hasAtLeastOneKey) {
-      console.error(chalk.red('ERROR: At least one API key is required (OPENAI_API_KEY, DEEPSEEK_API_KEY, OPENROUTER_API_KEY, or ZAI_API_KEY)'));
+      console.error(chalk.red('ERROR: At least one API key is required (OPENAI_API_KEY, DEEPSEEK_API_KEY, OPENROUTER_API_KEY, ZAI_API_KEY, or CUSTOM_OPENAI_API_KEY)'));
       process.exit(1);
     }
 
@@ -205,6 +176,7 @@ class CognitionWheel {
     if (process.env.DEEPSEEK_API_KEY) configuredProviders.push('DeepSeek');
     if (process.env.OPENROUTER_API_KEY) configuredProviders.push('OpenRouter');
     if (process.env.ZAI_API_KEY) configuredProviders.push('z.ai');
+    if (process.env.CUSTOM_OPENAI_API_KEY) configuredProviders.push('Custom-OpenAI-Compatible');
 
     console.error(chalk.green(`Configured providers: ${configuredProviders.join(', ')}`));
   }
@@ -212,6 +184,10 @@ class CognitionWheel {
   getModels(useSearch: boolean) {
     const codeNames = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta', 'Theta'];
     this.models = [];
+
+    // IMPORTANT: Models are only added if their corresponding API key environment variable exists.
+    // This ensures no API calls are made to providers without valid credentials.
+    // Priority order for synthesizer selection: OpenAI > DeepSeek > z.ai > OpenRouter > Custom
 
     // Add OpenAI model if API key is provided
     if (process.env.OPENAI_API_KEY) {
@@ -253,6 +229,36 @@ class CognitionWheel {
       });
     }
 
+    // Add z.ai model if API key is provided
+    if (process.env.ZAI_API_KEY) {
+      // Use configurable base URL - defaults to faster Anthropic-compatible endpoint
+      // Options: https://api.z.ai/api/anthropic/v1 (fastest, default)
+      //          https://api.z.ai/api/coding/paas/v4 (for coding plan)
+      //          https://api.z.ai/api/paas/v4 (common API)
+      const zaiBaseUrl = process.env.ZAI_BASE_URL || 'https://api.z.ai/api/anthropic/v1';
+      const zaiModel = process.env.ZAI_MODEL || 'glm-4.6';
+
+      // Use Anthropic SDK for anthropic endpoint, OpenRouter SDK for OpenAI-compatible endpoints
+      const isAnthropicEndpoint = zaiBaseUrl.includes('/anthropic');
+      const zaiProvider = isAnthropicEndpoint
+        ? createAnthropic({
+            apiKey: process.env.ZAI_API_KEY,
+            baseURL: zaiBaseUrl
+          })
+        : createOpenRouter({
+            apiKey: process.env.ZAI_API_KEY,
+            baseURL: zaiBaseUrl
+          });
+
+      this.models.push({
+        name: zaiModel.toUpperCase(),
+        codeName: codeNames[this.models.length],
+        provider: zaiProvider,
+        model: zaiModel,
+        config: {}
+      });
+    }
+
     // Add OpenRouter models if API key is provided
     if (process.env.OPENROUTER_API_KEY) {
       const openrouter = createOpenRouter({
@@ -276,25 +282,28 @@ class CognitionWheel {
       });
     }
 
-    // Add z.ai model
-    if (process.env.ZAI_API_KEY) {
-      // Use configurable base URL - defaults to common API
-      // Set ZAI_BASE_URL=https://api.z.ai/api/coding/paas/v4 for coding plan
-      const zaiBaseUrl = process.env.ZAI_BASE_URL || 'https://api.z.ai/api/paas/v4';
-      const zaiModel = process.env.ZAI_MODEL || 'glm-4.6';
+    // Add custom OpenAI-compatible provider if API key is provided
+    if (process.env.CUSTOM_OPENAI_API_KEY) {
+      const customBaseUrl = process.env.CUSTOM_OPENAI_BASE_URL;
+      const customModel = process.env.CUSTOM_OPENAI_MODEL;
 
-      const zaiProvider = createOpenRouter({
-        apiKey: process.env.ZAI_API_KEY,
-        baseURL: zaiBaseUrl
-      });
+      if (!customBaseUrl || !customModel) {
+        console.error(chalk.yellow('Warning: CUSTOM_OPENAI_API_KEY provided but missing CUSTOM_OPENAI_BASE_URL or CUSTOM_OPENAI_MODEL'));
+      } else {
+        // Use OpenRouter SDK with custom base URL for better compatibility
+        const customProvider = createOpenRouter({
+          apiKey: process.env.CUSTOM_OPENAI_API_KEY,
+          baseURL: customBaseUrl
+        });
 
-      this.models.push({
-        name: zaiModel.toUpperCase(),
-        codeName: codeNames[this.models.length],
-        provider: zaiProvider,
-        model: zaiModel,
-        config: {}
-      });
+        this.models.push({
+          name: `Custom-${customModel}`,
+          codeName: codeNames[this.models.length],
+          provider: customProvider,
+          model: customModel,
+          config: {}
+        });
+      }
     }
 
     return this.models;
@@ -316,13 +325,13 @@ class CognitionWheel {
       }
       const { context, question, enable_internet_search } = args;
       this.models = this.getModels(enable_internet_search);
-      logger.log('Starting Cognition Wheel process...', { 
-        enable_internet_search, 
-        models: this.models.map(m => ({ name: m.name, codeName: m.codeName }))
+      logger.log('Starting Cognition Wheel process...', {
+        enable_internet_search,
+        models: this.models.map(m => m.name)
       });
 
-      // 2. Make three parallel API calls to real models
-      logger.log('Dispatching calls to all three models in parallel.');
+      // 2. Make parallel API calls to all configured models
+      logger.log(`Dispatching calls to ${this.models.length} models in parallel.`);
 
       const promises = this.models.map(model =>
         callRealModel(model, context, question, logger)
@@ -335,14 +344,13 @@ class CognitionWheel {
         responseLengths: responses.map(r => r.length)
       });
 
-      // 3. Randomly select one model to be the synthesizer
-      const synthesizerModel = this.models[Math.floor(Math.random() * this.models.length)];
-      logger.log(`Randomly selected ${synthesizerModel.name} as the synthesizer.`, { 
-        synthesizer: synthesizerModel.name,
-        synthesizerCodeName: synthesizerModel.codeName
+      // 3. Use the first configured model as the synthesizer
+      const synthesizerModel = this.models[0];
+      logger.log(`Using ${synthesizerModel.name} as the synthesizer.`, {
+        synthesizer: synthesizerModel.name
       });
 
-      // 4. Construct the rich prompt for the synthesizer using code names
+      // 4. Construct the synthesis prompt
       const finalPrompt = createSynthesizerPrompt(context, question, responses, this.models);
       logger.log('Generating final synthesis...', { 
         promptLength: finalPrompt.length,
@@ -351,15 +359,14 @@ class CognitionWheel {
 
       // 5. Make the final synthesis call
       const synthStartTime = Date.now();
-      const { text: rawFinalAnswer } = await generateText({
+      const { text: finalAnswer } = await generateText({
         model: synthesizerModel.provider(synthesizerModel.model),
         prompt: finalPrompt,
       });
 
-      // 6. Replace code names with real model names in the final synthesis
-      const finalAnswer = replaceCodeNamesWithRealNames(rawFinalAnswer, this.models);
+      // 6. Synthesis complete
       const synthDuration = Date.now() - synthStartTime;
-      logger.log('Final synthesis completed and de-anonymized.', { 
+      logger.log('Final synthesis completed.', { 
         synthDuration,
         finalAnswerLength: finalAnswer.length,
         logPath: logger.getLogPath()
@@ -419,7 +426,7 @@ class CognitionWheel {
 
 const COGNITION_WHEEL_TOOL = {
   name: "cognition_wheel",
-  description: "A tool that consults multiple AI models (GPT-5, configurable OpenRouter models, and optionally z.ai GLM-4.6) in parallel, then uses one of them to synthesize the results into a single, high-quality answer. Use this for complex questions requiring deep analysis and verification.",
+  description: "A tool that consults multiple AI models (OpenAI GPT-5, DeepSeek, z.ai GLM-4.6, configurable OpenRouter models, and custom OpenAI-compatible providers) in parallel, then uses one of them to synthesize all responses into a single, high-quality answer. Supports 2+ models. Use this for complex questions requiring deep analysis and verification from multiple AI perspectives.",
   inputSchema: {
     type: "object",
     properties: {
@@ -433,7 +440,7 @@ const COGNITION_WHEEL_TOOL = {
       },
       enable_internet_search: {
         type: "boolean",
-        description: "Set to true to allow the three models to search the internet for information."
+        description: "Set to true to allow the models to search the internet for information (OpenAI only)."
       }
     },
     required: ["context", "question", "enable_internet_search"]

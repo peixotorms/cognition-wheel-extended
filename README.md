@@ -2,24 +2,11 @@
 
 A Model Context Protocol (MCP) server that implements a "wisdom of crowds" approach to AI reasoning by consulting multiple state-of-the-art language models in parallel and synthesizing their responses.
 
-**Extended fork with support for multiple providers: OpenAI GPT-5, DeepSeek, OpenRouter models, and z.ai GLM-4.6!**
+**Extended fork with support for multiple providers: OpenAI GPT-5, DeepSeek, z.ai GLM-4.6, OpenRouter models, and custom OpenAI-compatible providers (novita.ai, together.ai, etc.)!**
 
 **Original by Nikita Podelenko | Extended by Raul P.**
 
 ## Quick Start
-
-### Option 1: Use with npx (Recommended)
-
-```bash
-# Run directly with npx (no installation needed)
-npx mcp-cognition-wheel-extended
-
-# Or install globally
-npm install -g mcp-cognition-wheel-extended
-mcp-cognition-wheel-extended
-```
-
-### Option 2: Build from source
 
 1. Clone the repository
 2. Install dependencies: `pnpm install`
@@ -33,40 +20,36 @@ The Cognition Wheel follows a three-phase process:
 1. **Parallel Consultation**: Simultaneously queries configured AI models (all optional, at least one required):
    - **GPT-5** (OpenAI) with configurable reasoning effort - if OPENAI_API_KEY is provided
    - **DeepSeek** (deepseek-chat or deepseek-reasoner) - if DEEPSEEK_API_KEY is provided
-   - **Configurable OpenRouter models** (default: Qwen3-Coder, DeepSeek-v3.2, Kimi-K2) - if OPENROUTER_API_KEY is provided
    - **GLM-4.6** (z.ai) - if ZAI_API_KEY is provided
+   - **Configurable OpenRouter models** (default: Qwen3-Coder, DeepSeek-v3.2, Kimi-K2) - if OPENROUTER_API_KEY is provided
+   - **Custom OpenAI-compatible providers** (novita.ai, together.ai, etc.) - if CUSTOM_OPENAI_API_KEY is provided
 
-2. **Anonymous Analysis**: Uses code names (Alpha, Beta, Gamma, etc.) to eliminate bias during the synthesis phase
-
-3. **Smart Synthesis**: Randomly selects one of the models to act as a synthesizer, which analyzes all responses and produces a final, comprehensive answer
+2. **Smart Synthesis**: Uses the first configured model as the synthesizer (priority order: OpenAI > DeepSeek > z.ai > OpenRouter > Custom OpenAI-compatible), which analyzes all responses and produces a final, comprehensive answer
 
 ## Features
 
 - **Parallel Processing**: All models are queried simultaneously for faster results
-- **Bias Reduction**: Anonymous code names prevent synthesizer bias toward specific models
-- **Internet Search**: Optional web search capabilities for all models
+- **Multi-Model Synthesis**: One randomly selected model synthesizes all responses into a comprehensive answer
+- **Internet Search**: Optional web search capabilities for OpenAI models
 - **Detailed Logging**: Comprehensive debug logs for transparency and troubleshooting
 - **Robust Error Handling**: Graceful degradation when individual models fail
 
 ## Installation
 
-### Option 1: Use with npx (Recommended)
-
-```bash
-# Run directly with npx (no installation needed)
-npx mcp-cognition-wheel-extended
-
-# Or install globally
-npm install -g mcp-cognition-wheel-extended
-mcp-cognition-wheel-extended
-```
-
-### Option 2: Build from source
+### Option 1: Build from source
 
 1. Clone the repository
 2. Install dependencies: `pnpm install`
 3. Copy `.env.example` to `.env` and add your API keys
 4. Build the project: `pnpm run build`
+
+### Option 2: Install from npm (when published)
+
+```bash
+# This will work once the package is published to npm
+npm install -g mcp-cognition-wheel-extended
+mcp-cognition-wheel-extended
+```
 
 ## Usage
 
@@ -80,6 +63,7 @@ This is an MCP server designed to be used with MCP-compatible clients like Claud
 - `DEEPSEEK_API_KEY`: Your DeepSeek API key (get it from [DeepSeek Platform](https://platform.deepseek.com))
 - `OPENROUTER_API_KEY`: Your OpenRouter API key (get it from [OpenRouter Dashboard](https://openrouter.ai/keys))
 - `ZAI_API_KEY`: Your z.ai API key for GLM-4.6 (get it from [z.ai](https://z.ai))
+- `CUSTOM_OPENAI_API_KEY`: API key for any OpenAI-compatible provider (e.g., [novita.ai](https://novita.ai), [together.ai](https://together.ai))
 
 ### Optional Configuration
 
@@ -105,9 +89,20 @@ This is an MCP server designed to be used with MCP-compatible clients like Claud
   - Default: `glm-4.6`
   - Options: `glm-4.6`, `glm-4-plus`, `glm-4-air`, etc.
 
-- `ZAI_BASE_URL`: z.ai API endpoint (required if you have a z.ai coder plan)
-  - Default: `https://api.z.ai/api/paas/v4` (common API)
-  - Coding Plan: `https://api.z.ai/api/coding/paas/v4`
+- `ZAI_BASE_URL`: z.ai API endpoint
+  - Default: `https://api.z.ai/api/anthropic/v1` (⚡ fastest, ~40% faster)
+  - Coding Plan: `https://api.z.ai/api/coding/paas/v4` (OpenAI format)
+  - Common API: `https://api.z.ai/api/paas/v4` (OpenAI format)
+
+- `CUSTOM_OPENAI_BASE_URL`: Base URL for custom OpenAI-compatible provider
+  - Required when using `CUSTOM_OPENAI_API_KEY`
+  - **IMPORTANT**: Do NOT include `/v1` in the URL (the SDK handles this automatically)
+  - Example for novita.ai: `https://api.novita.ai/openai`
+  - Example for together.ai: `https://api.together.xyz`
+
+- `CUSTOM_OPENAI_MODEL`: Model name for custom OpenAI-compatible provider
+  - Required when using `CUSTOM_OPENAI_API_KEY`
+  - Example: `meta-llama/Llama-3.3-70B-Instruct-Turbo`
 
 ### Using with Claude Code
 
@@ -152,6 +147,15 @@ claude mcp add cognition-wheel-extended -s user \
   -- node /absolute/path/to/cognition-wheel-extended/dist/app.js
 ```
 
+**Custom OpenAI-compatible provider (e.g., novita.ai):**
+```bash
+claude mcp add cognition-wheel-extended -s user \
+  -e CUSTOM_OPENAI_API_KEY="your-novita-key" \
+  -e CUSTOM_OPENAI_BASE_URL="https://api.novita.ai/openai" \
+  -e CUSTOM_OPENAI_MODEL="deepseek/deepseek-v3.2-exp" \
+  -- node /absolute/path/to/cognition-wheel-extended/dist/app.js
+```
+
 **Verify installation:**
 ```bash
 # List all MCP servers
@@ -173,36 +177,6 @@ microservices and monolithic architectures.
 ### Using with Cursor
 
 Based on the guide from [this dev.to article](https://dev.to/andyrewlee/use-your-own-mcp-on-cursor-in-5-minutes-1ag4), here's how to integrate with Cursor:
-
-#### Option 1: Using npx (Recommended)
-
-1. **Open Cursor Settings**:
-   - Go to Settings → MCP
-   - Click "Add new MCP server"
-
-2. **Configure the server**:
-   - **Name**: `cognition-wheel-extended`
-   - **Command**: `npx`
-   - **Args**: `["-y", "mcp-cognition-wheel-extended"]`
-
-   Example configuration:
-   ```json
-   {
-     "cognition-wheel-extended": {
-       "command": "npx",
-       "args": ["-y", "mcp-cognition-wheel-extended"],
-       "env": {
-         "OPENAI_API_KEY": "your_openai_key",
-         "OPENROUTER_API_KEY": "your_openrouter_key",
-         "ZAI_API_KEY": "your_zai_key",
-         "OPENROUTER_MODELS": "qwen/qwen3-coder,deepseek/deepseek-v3.2-exp,moonshotai/kimi-k2-0905",
-         "ZAI_BASE_URL": "https://api.z.ai/api/coding/paas/v4"
-       }
-     }
-   }
-   ```
-
-#### Option 2: Using local build
 
 1. **Build the project** (if not already done):
    ```bash
@@ -266,6 +240,9 @@ docker run --rm \
   -e DEEPSEEK_API_KEY=your_deepseek_key \
   -e OPENROUTER_API_KEY=your_openrouter_key \
   -e ZAI_API_KEY=your_zai_key \
+  -e CUSTOM_OPENAI_API_KEY=your_custom_key \
+  -e CUSTOM_OPENAI_BASE_URL="https://api.novita.ai/openai" \
+  -e CUSTOM_OPENAI_MODEL="deepseek/deepseek-v3.2-exp" \
   -e OPENROUTER_MODELS="qwen/qwen3-coder,deepseek/deepseek-v3.2-exp,moonshotai/kimi-k2-0905" \
   -e ZAI_BASE_URL="https://api.z.ai/api/coding/paas/v4" \
   cognition-wheel-extended
