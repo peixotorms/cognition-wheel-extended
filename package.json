@@ -1,33 +1,37 @@
 {
-  "name": "mcp-cognition-wheel",
+  "name": "mcp-cognition-wheel-extended",
   "version": "0.6.2",
-  "description": "MCP server implementing wisdom of crowds AI reasoning by consulting Claude, Gemini, and GPT-4 in parallel",
+  "description": "MCP server implementing wisdom of crowds AI reasoning by consulting multiple AI providers (OpenAI GPT-5, DeepSeek, OpenRouter models, z.ai GLM-4.6) in parallel",
   "license": "MIT",
   "author": "Nikita Podelenko",
-  "homepage": "https://github.com/Hormold/cognition-wheel",
-  "bugs": "https://github.com/Hormold/cognition-wheel/issues",
+  "contributors": [
+    "Raul P."
+  ],
+  "homepage": "https://github.com/peixotorms/cognition-wheel-extended",
+  "bugs": "https://github.com/peixotorms/cognition-wheel-extended/issues",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Hormold/cognition-wheel.git"
+    "url": "git+https://github.com/peixotorms/cognition-wheel-extended.git"
   },
   "keywords": [
     "mcp",
     "model-context-protocol",
     "ai",
-    "claude",
-    "gemini",
-    "gpt-4",
+    "gpt-5",
+    "deepseek",
+    "openrouter",
+    "zai",
+    "glm-4.6",
     "parallel-processing",
     "wisdom-of-crowds",
     "cursor",
-    "anthropic",
     "openai",
-    "google"
+    "reasoning"
   ],
   "type": "module",
   "bin": {
-    "mcp-cognition-wheel": "dist/app.js",
-    "wheel": "dist/app.js"
+    "mcp-cognition-wheel-extended": "dist/app.js",
+    "wheel-extended": "dist/app.js"
   },
   "files": [
     "dist",
@@ -41,10 +45,10 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "2.0.0-alpha.13",
-    "@ai-sdk/google": "2.0.0-alpha.13",
+    "@ai-sdk/deepseek": "^1.0.18",
     "@ai-sdk/openai": "2.0.0-alpha.13",
     "@modelcontextprotocol/sdk": "0.5.0",
+    "@openrouter/ai-sdk-provider": "^0.0.5",
     "ai": "5.0.0-alpha.13",
     "chalk": "^5.3.0",
     "dotenv": "^16.5.0",

@@ -9,9 +9,9 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import chalk from 'chalk';
 import { generateText } from 'ai';
-import { anthropic, AnthropicProviderOptions } from '@ai-sdk/anthropic';
-import { google, GoogleGenerativeAIProviderOptions } from '@ai-sdk/google';
+import { deepseek } from '@ai-sdk/deepseek';
 import { openai } from '@ai-sdk/openai';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
@@ -187,64 +187,46 @@ class CognitionWheel {
   private models: ModelConfig[] = [];
 
   constructor() {
-    // Check for required API keys
-    if (!process.env.ANTHROPIC_API_KEY) {
-      console.error(chalk.red('Missing ANTHROPIC_API_KEY environment variable'));
-    }
-    if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-      console.error(chalk.red('Missing GOOGLE_GENERATIVE_AI_API_KEY environment variable'));
-    }
-    if (!process.env.OPENAI_API_KEY) {
-      console.error(chalk.red('Missing OPENAI_API_KEY environment variable'));
+    // Check that at least one API key is provided
+    const hasAtLeastOneKey =
+      process.env.OPENAI_API_KEY ||
+      process.env.DEEPSEEK_API_KEY ||
+      process.env.OPENROUTER_API_KEY ||
+      process.env.ZAI_API_KEY;
+
+    if (!hasAtLeastOneKey) {
+      console.error(chalk.red('ERROR: At least one API key is required (OPENAI_API_KEY, DEEPSEEK_API_KEY, OPENROUTER_API_KEY, or ZAI_API_KEY)'));
+      process.exit(1);
     }
 
+    // Log which providers are configured
+    const configuredProviders = [];
+    if (process.env.OPENAI_API_KEY) configuredProviders.push('OpenAI');
+    if (process.env.DEEPSEEK_API_KEY) configuredProviders.push('DeepSeek');
+    if (process.env.OPENROUTER_API_KEY) configuredProviders.push('OpenRouter');
+    if (process.env.ZAI_API_KEY) configuredProviders.push('z.ai');
 
+    console.error(chalk.green(`Configured providers: ${configuredProviders.join(', ')}`));
   }
 
   getModels(useSearch: boolean) {
-    this.models = [
-      {
-        name: 'Claude-4-Opus',
-        codeName: 'Alpha',
-        provider: anthropic,
-        model: 'claude-4-opus-20250514',
-        config: {
-          providerOptions: {
-            anthropic: {
-              thinking: { type: 'enabled', budgetTokens: 12000 },
-              ...(useSearch ? {
-                webSearch: {
-                  maxUses: 3,
-                }
-              } : {})
-            } satisfies AnthropicProviderOptions,
-          },
-        }
-      },
-      {
-        name: 'Gemini-2.5-Pro',
-        codeName: 'Beta',
-        provider: google,
-        model: 'gemini-2.5-pro-preview-06-05',
-        config: {
-          ...(useSearch ? {
-            providerOptions: {
-              google: {
-                useSearchGrounding: true,
-              } satisfies GoogleGenerativeAIProviderOptions,
-            }
-          } : {})
-        }
-      },
-      {
-        name: 'O3',
-        codeName: 'Gamma',
+    const codeNames = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta', 'Theta'];
+    this.models = [];
+
+    // Add OpenAI model if API key is provided
+    if (process.env.OPENAI_API_KEY) {
+      const openaiModel = process.env.OPENAI_MODEL || 'gpt-5';
+      const openaiReasoningEffort = (process.env.OPENAI_REASONING_EFFORT || 'high') as 'minimal' | 'low' | 'medium' | 'high';
+
+      this.models.push({
+        name: openaiModel.toUpperCase(),
+        codeName: codeNames[this.models.length],
         provider: openai,
-        model: 'o3',
+        model: openaiModel,
         config: {
           providerOptions: {
             openai: {
-              reasoningEffort: 'medium', // low, medium, high
+              reasoningEffort: openaiReasoningEffort,
             },
           },
           ...(useSearch ? {
@@ -255,8 +237,66 @@ class CognitionWheel {
             },
           } : {})
         },
-      }
-    ];
+      });
+    }
+
+    // Add DeepSeek model if API key is provided
+    if (process.env.DEEPSEEK_API_KEY) {
+      const deepseekModel = process.env.DEEPSEEK_MODEL || 'deepseek-chat';
+
+      this.models.push({
+        name: deepseekModel.toUpperCase(),
+        codeName: codeNames[this.models.length],
+        provider: deepseek,
+        model: deepseekModel,
+        config: {}
+      });
+    }
+
+    // Add OpenRouter models if API key is provided
+    if (process.env.OPENROUTER_API_KEY) {
+      const openrouter = createOpenRouter({
+        apiKey: process.env.OPENROUTER_API_KEY,
+      });
+
+      // Get configurable OpenRouter models from environment variable
+      const openrouterModelsEnv = process.env.OPENROUTER_MODELS || 'qwen/qwen3-coder,deepseek/deepseek-v3.2-exp,moonshotai/kimi-k2-0905';
+      const openrouterModelSpecs = openrouterModelsEnv.split(',').map(spec => spec.trim());
+
+      openrouterModelSpecs.forEach((spec) => {
+        const modelId = spec;
+        const displayName = modelId.split('/')[1] || modelId;
+        this.models.push({
+          name: `OpenRouter-${displayName}`,
+          codeName: codeNames[this.models.length],
+          provider: openrouter,
+          model: modelId,
+          config: {}
+        });
+      });
+    }
+
+    // Add z.ai model
+    if (process.env.ZAI_API_KEY) {
+      // Use configurable base URL - defaults to common API
+      // Set ZAI_BASE_URL=https://api.z.ai/api/coding/paas/v4 for coding plan
+      const zaiBaseUrl = process.env.ZAI_BASE_URL || 'https://api.z.ai/api/paas/v4';
+      const zaiModel = process.env.ZAI_MODEL || 'glm-4.6';
+
+      const zaiProvider = createOpenRouter({
+        apiKey: process.env.ZAI_API_KEY,
+        baseURL: zaiBaseUrl
+      });
+
+      this.models.push({
+        name: zaiModel.toUpperCase(),
+        codeName: codeNames[this.models.length],
+        provider: zaiProvider,
+        model: zaiModel,
+        config: {}
+      });
+    }
+
     return this.models;
   }
 
@@ -379,7 +419,7 @@ class CognitionWheel {
 
 const COGNITION_WHEEL_TOOL = {
   name: "cognition_wheel",
-  description: "A tool that consults three AI models (Claude Opus, Gemini 2.0, GPT-4) in parallel, then uses one of them to synthesize the results into a single, high-quality answer. Use this for complex questions requiring deep analysis and verification.",
+  description: "A tool that consults multiple AI models (GPT-5, configurable OpenRouter models, and optionally z.ai GLM-4.6) in parallel, then uses one of them to synthesize the results into a single, high-quality answer. Use this for complex questions requiring deep analysis and verification.",
   inputSchema: {
     type: "object",
     properties: {

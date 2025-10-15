@@ -1,6 +1,10 @@
-# Cognition Wheel MCP Server
+# Cognition Wheel Extended - MCP Server
 
 A Model Context Protocol (MCP) server that implements a "wisdom of crowds" approach to AI reasoning by consulting multiple state-of-the-art language models in parallel and synthesizing their responses.
+
+**Extended fork with support for multiple providers: OpenAI GPT-5, DeepSeek, OpenRouter models, and z.ai GLM-4.6!**
+
+**Original by Nikita Podelenko | Extended by Raul P.**
 
 ## Quick Start
 
@@ -8,11 +12,11 @@ A Model Context Protocol (MCP) server that implements a "wisdom of crowds" appro
 
 ```bash
 # Run directly with npx (no installation needed)
-npx mcp-cognition-wheel
+npx mcp-cognition-wheel-extended
 
 # Or install globally
-npm install -g mcp-cognition-wheel
-mcp-cognition-wheel
+npm install -g mcp-cognition-wheel-extended
+mcp-cognition-wheel-extended
 ```
 
 ### Option 2: Build from source
@@ -26,12 +30,13 @@ mcp-cognition-wheel
 
 The Cognition Wheel follows a three-phase process:
 
-1. **Parallel Consultation**: Simultaneously queries three different AI models:
-   - Claude-4-Opus (Anthropic)
-   - Gemini-2.5-Pro (Google)
-   - O3 (OpenAI)
+1. **Parallel Consultation**: Simultaneously queries configured AI models (all optional, at least one required):
+   - **GPT-5** (OpenAI) with configurable reasoning effort - if OPENAI_API_KEY is provided
+   - **DeepSeek** (deepseek-chat or deepseek-reasoner) - if DEEPSEEK_API_KEY is provided
+   - **Configurable OpenRouter models** (default: Qwen3-Coder, DeepSeek-v3.2, Kimi-K2) - if OPENROUTER_API_KEY is provided
+   - **GLM-4.6** (z.ai) - if ZAI_API_KEY is provided
 
-2. **Anonymous Analysis**: Uses code names (Alpha, Beta, Gamma) to eliminate bias during the synthesis phase
+2. **Anonymous Analysis**: Uses code names (Alpha, Beta, Gamma, etc.) to eliminate bias during the synthesis phase
 
 3. **Smart Synthesis**: Randomly selects one of the models to act as a synthesizer, which analyzes all responses and produces a final, comprehensive answer
 
@@ -49,11 +54,11 @@ The Cognition Wheel follows a three-phase process:
 
 ```bash
 # Run directly with npx (no installation needed)
-npx mcp-cognition-wheel
+npx mcp-cognition-wheel-extended
 
 # Or install globally
-npm install -g mcp-cognition-wheel
-mcp-cognition-wheel
+npm install -g mcp-cognition-wheel-extended
+mcp-cognition-wheel-extended
 ```
 
 ### Option 2: Build from source
@@ -69,9 +74,40 @@ This is an MCP server designed to be used with MCP-compatible clients like Claud
 
 ### Required Environment Variables
 
-- `ANTHROPIC_API_KEY`: Your Anthropic API key
-- `GOOGLE_GENERATIVE_AI_API_KEY`: Your Google AI API key  
-- `OPENAI_API_KEY`: Your OpenAI API key
+**At least ONE of the following API keys is required:**
+
+- `OPENAI_API_KEY`: Your OpenAI API key for GPT-5 (get it from [OpenAI Platform](https://platform.openai.com/api-keys))
+- `DEEPSEEK_API_KEY`: Your DeepSeek API key (get it from [DeepSeek Platform](https://platform.deepseek.com))
+- `OPENROUTER_API_KEY`: Your OpenRouter API key (get it from [OpenRouter Dashboard](https://openrouter.ai/keys))
+- `ZAI_API_KEY`: Your z.ai API key for GLM-4.6 (get it from [z.ai](https://z.ai))
+
+### Optional Configuration
+
+- `OPENAI_MODEL`: OpenAI model to use
+  - Default: `gpt-5`
+  - Options: `gpt-5`, `gpt-5-mini`, `gpt-5-nano`
+
+- `OPENAI_REASONING_EFFORT`: Reasoning effort level for OpenAI models
+  - Default: `high`
+  - Options: `minimal`, `low`, `medium`, `high`
+  - Note: Higher effort uses more tokens but provides better reasoning
+
+- `DEEPSEEK_MODEL`: DeepSeek model to use
+  - Default: `deepseek-chat`
+  - Options: `deepseek-chat`, `deepseek-reasoner`
+
+- `OPENROUTER_MODELS`: Comma-separated list of OpenRouter models to use
+  - Default: `qwen/qwen3-coder,deepseek/deepseek-v3.2-exp,moonshotai/kimi-k2-0905`
+  - You can choose from [300+ models available on OpenRouter](https://openrouter.ai/models)
+  - Examples: `qwen/qwen3-coder`, `deepseek/deepseek-v3.2-exp`, `anthropic/claude-3.7-sonnet:thinking`, `meta-llama/llama-3.3-70b-instruct`
+
+- `ZAI_MODEL`: z.ai model to use
+  - Default: `glm-4.6`
+  - Options: `glm-4.6`, `glm-4-plus`, `glm-4-air`, etc.
+
+- `ZAI_BASE_URL`: z.ai API endpoint (required if you have a z.ai coder plan)
+  - Default: `https://api.z.ai/api/paas/v4` (common API)
+  - Coding Plan: `https://api.z.ai/api/coding/paas/v4`
 
 ### Using with Cursor
 
@@ -84,20 +120,22 @@ Based on the guide from [this dev.to article](https://dev.to/andyrewlee/use-your
    - Click "Add new MCP server"
 
 2. **Configure the server**:
-   - **Name**: `cognition-wheel`
+   - **Name**: `cognition-wheel-extended`
    - **Command**: `npx`
-   - **Args**: `["-y", "mcp-cognition-wheel"]`
-   
+   - **Args**: `["-y", "mcp-cognition-wheel-extended"]`
+
    Example configuration:
    ```json
    {
-     "cognition-wheel": {
+     "cognition-wheel-extended": {
        "command": "npx",
-       "args": ["-y", "mcp-cognition-wheel"],
+       "args": ["-y", "mcp-cognition-wheel-extended"],
        "env": {
-         "ANTHROPIC_API_KEY": "your_anthropic_key",
-         "GOOGLE_GENERATIVE_AI_API_KEY": "your_google_key", 
-         "OPENAI_API_KEY": "your_openai_key"
+         "OPENAI_API_KEY": "your_openai_key",
+         "OPENROUTER_API_KEY": "your_openrouter_key",
+         "ZAI_API_KEY": "your_zai_key",
+         "OPENROUTER_MODELS": "qwen/qwen3-coder,deepseek/deepseek-v3.2-exp,moonshotai/kimi-k2-0905",
+         "ZAI_BASE_URL": "https://api.z.ai/api/coding/paas/v4"
        }
      }
    }
@@ -111,22 +149,24 @@ Based on the guide from [this dev.to article](https://dev.to/andyrewlee/use-your
    ```
 
 2. **Configure the server**:
-   - **Name**: `cognition-wheel`
+   - **Name**: `cognition-wheel-extended`
    - **Command**: `node`
-   - **Args**: `["/absolute/path/to/your/cognition-wheel/dist/app.js"]`
-   
+   - **Args**: `["/absolute/path/to/your/cognition-wheel-extended/dist/app.js"]`
+
    Example configuration:
    ```json
    {
-     "cognition-wheel": {
+     "cognition-wheel-extended": {
        "command": "node",
        "args": [
-         "/Users/yourname/path/to/cognition-wheel/dist/app.js"
+         "/Users/yourname/path/to/cognition-wheel-extended/dist/app.js"
        ],
        "env": {
-         "ANTHROPIC_API_KEY": "your_anthropic_key",
-         "GOOGLE_GENERATIVE_AI_API_KEY": "your_google_key", 
-         "OPENAI_API_KEY": "your_openai_key"
+         "OPENAI_API_KEY": "your_openai_key",
+         "OPENROUTER_API_KEY": "your_openrouter_key",
+         "ZAI_API_KEY": "your_zai_key",
+         "OPENROUTER_MODELS": "qwen/qwen3-coder,deepseek/deepseek-v3.2-exp,moonshotai/kimi-k2-0905",
+         "ZAI_BASE_URL": "https://api.z.ai/api/coding/paas/v4"
        }
      }
    }
@@ -157,14 +197,17 @@ Build and run with Docker:
 
 ```bash
 # Build the image
-docker build -t cognition-wheel .
+docker build -t cognition-wheel-extended .
 
 # Run with environment variables
 docker run --rm \
-  -e ANTHROPIC_API_KEY=your_key \
-  -e GOOGLE_GENERATIVE_AI_API_KEY=your_key \
-  -e OPENAI_API_KEY=your_key \
-  cognition-wheel
+  -e OPENAI_API_KEY=your_openai_key \
+  -e DEEPSEEK_API_KEY=your_deepseek_key \
+  -e OPENROUTER_API_KEY=your_openrouter_key \
+  -e ZAI_API_KEY=your_zai_key \
+  -e OPENROUTER_MODELS="qwen/qwen3-coder,deepseek/deepseek-v3.2-exp,moonshotai/kimi-k2-0905" \
+  -e ZAI_BASE_URL="https://api.z.ai/api/coding/paas/v4" \
+  cognition-wheel-extended
 ```
 
 ## License
